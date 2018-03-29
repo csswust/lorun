@@ -20,17 +20,19 @@
 #include <sys/mman.h>
 
 int equalStr(const char *s, const char *s2) {
-    const char *c1 = s, *c2 = s2;
-    while (*c1 && c2 && (*c1++ == *c2++))
-        ;
-    if ((*c1 | *c2) == 0)
-        return 1;
+    while (*s && *s2) {
+        if (*s++ != *s2++) {
+            return 1;
+        }
+    }
+
     return 0;
 }
 
 #define RETURN(rst) {*result = rst;return 0;}
 int checkDiff(int rightout_fd, int userout_fd, int *result) {
     char *userout, *rightout;
+    const char *cuser, *cright, *end_user, *end_right;
 
     off_t userout_len, rightout_len;
     userout_len = lseek(userout_fd, 0, SEEK_END);
@@ -63,15 +65,16 @@ int checkDiff(int rightout_fd, int userout_fd, int *result) {
         RAISE1("mmap right filure");
     }
 
-    if ((userout_len == rightout_len) && equalStr(userout, rightout)) {
+    if ((userout_len == rightout_len) && equalStr(userout, rightout) == 0) {
         munmap(userout, userout_len);
         munmap(rightout, rightout_len);
         RETURN(AC);
     }
 
-    const char *cuser = userout, *cright = rightout;
-    const char *end_user = userout + userout_len;
-    const char *end_right = rightout + rightout_len;
+    cuser = userout;
+    cright = rightout;
+    end_user = userout + userout_len;
+    end_right = rightout + rightout_len;
     while ((cuser < end_user) && (cright < end_right)) {
         while ((cuser < end_user)
                 && (*cuser == ' ' || *cuser == '\n' || *cuser == '\r'
